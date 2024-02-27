@@ -49,13 +49,22 @@
 #![cfg_attr(all(not(test), not(doc)), no_std)]
 #![feature(doc_cfg)]
 #![feature(doc_auto_cfg)]
+// 作业里提到的宏
+// ulib/axstd/src/lib.rs
+#![feature(hashmap_internals)]
+#![feature(extend_one)]
+#![feature(hasher_prefixfree_extras)]
+#![feature(error_in_core)]
+#![feature(try_reserve_kind)]
+#![feature(thread_local)]
+#![feature(const_hash)]
 
-#[cfg(feature = "alloc")]
+// #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "alloc")]
+// #[cfg(feature = "alloc")]
 #[doc(no_inline)]
-pub use alloc::{boxed, collections, format, string, vec};
+pub use alloc::{boxed, format, string, vec};
 
 #[doc(no_inline)]
 pub use core::{arch, cell, cmp, hint, marker, mem, ops, ptr, slice, str};
@@ -75,3 +84,65 @@ pub mod time;
 pub mod fs;
 #[cfg(feature = "net")]
 pub mod net;
+
+pub mod collections {
+    use alloc::vec::Vec;
+
+    use crate::time;
+    use spinlock::SpinNoIrq;
+
+    static PARK_MILLER_LEHMER_SEED: SpinNoIrq<u32> = SpinNoIrq::new(0);
+    const RAND_MAX: u64 = 2_147_483_647;
+
+    pub fn random() -> u128 {
+        let mut seed = PARK_MILLER_LEHMER_SEED.lock();
+        if *seed == 0 {
+            *seed = time::Instant::now().elapsed().as_secs() as u32;
+        }
+
+        let mut ret: u128 = 0;
+        for _ in 0..4 {
+            *seed = ((u64::from(*seed) * 48271) % RAND_MAX) as u32;
+            ret = (ret << 32) | (*seed as u128);
+        }
+        ret
+    }
+
+    use core::{
+        default,
+        hash::{BuildHasher, Hash},
+    };
+
+    struct HashMap<K, V> {
+        buckets: Vec<Vec<(K, V)>>,
+    }
+
+    impl<K: Hash + Eq, V> HashMap<K, V> {
+        fn new() -> Self {
+            Self {
+                buckets: Vec::new(),
+            }
+        }
+        fn resize(&mut self) {
+            match self.buckets.len() {
+                0 => { //// TODO: 初始化
+                }
+                _ => { //// TODO: 扩容
+                }
+            }
+        }
+        fn insert(&mut self, key: K, value: V) {
+            use core::hash::BuildHasherDefault;
+            let mut default = BuildHasherDefault::default();
+            let hash = key.hash(&mut default);
+            let bucket = &mut self.buckets[hash as usize % self.buckets.len()];
+            for (k, v) in bucket {
+                if k == &key {
+                    *v = value;
+                    return;
+                }
+            }
+            bucket.push((key, value));
+        }
+    }
+}
