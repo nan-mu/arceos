@@ -87,37 +87,16 @@ pub mod net;
 
 pub mod collections {
     use alloc::vec::Vec;
-
-    use crate::time;
-    use spinlock::SpinNoIrq;
-
-    static PARK_MILLER_LEHMER_SEED: SpinNoIrq<u32> = SpinNoIrq::new(0);
-    const RAND_MAX: u64 = 2_147_483_647;
-
-    pub fn random() -> u128 {
-        let mut seed = PARK_MILLER_LEHMER_SEED.lock();
-        if *seed == 0 {
-            *seed = time::Instant::now().elapsed().as_secs() as u32;
-        }
-
-        let mut ret: u128 = 0;
-        for _ in 0..4 {
-            *seed = ((u64::from(*seed) * 48271) % RAND_MAX) as u32;
-            ret = (ret << 32) | (*seed as u128);
-        }
-        ret
-    }
-
     use core::{
-        default,
-        hash::{BuildHasher, Hash},
+        hash::{self, Hasher},
+        ptr::eq,
     };
 
     struct HashMap<K, V> {
         buckets: Vec<Vec<(K, V)>>,
     }
 
-    impl<K: Hash + Eq, V> HashMap<K, V> {
+    impl<K: hash::Hash + Eq, V: Clone> HashMap<K, V> {
         fn new() -> Self {
             Self {
                 buckets: Vec::new(),
@@ -131,18 +110,22 @@ pub mod collections {
                 }
             }
         }
-        fn insert(&mut self, key: K, value: V) {
-            use hash32::FnvHasher;
-            let mut fnv = FnvHasher::default();
-            let hash = key.hash(&mut fnv);
-            // let bucket = &mut self.buckets[hash as usize % self.buckets.len()];
-            // for (k, v) in bucket {
-            //     if k == &key {
-            //         *v = value;
-            //         return;
-            //     }
-            // }
-            // bucket.push((key, value));
+        fn insert(&mut self, key: K, value: V) -> Option<V> {
+            use hash32::Murmur3Hasher;
+            let mut fnv = Murmur3Hasher::default();
+            key.hash(&mut fnv);
+            let index = (fnv.finish() % self.buckets.len() as u64) as usize;
+            let bucket = &mut self.buckets[index];
+            for (k, v) in bucket.iter_mut() {
+                if eq(k, &key) {
+                    //假如找到key相同的tuple，就更新，返回原来的
+                    let temp = v.clone();
+                    *v = value;
+                    return Some(temp);
+                }
+            }
+            bucket.push((key, value));
+            None
         }
     }
 }
