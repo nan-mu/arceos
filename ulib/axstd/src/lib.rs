@@ -94,24 +94,43 @@ pub mod collections {
 
     struct HashMap<K, V> {
         buckets: Vec<Vec<(K, V)>>,
+        count: usize,
     }
 
     impl<K: hash::Hash + Eq, V: Clone> HashMap<K, V> {
         fn new() -> Self {
             Self {
-                buckets: Vec::new(),
+                buckets: Vec::with_capacity(0),
+                count: 0,
             }
         }
         fn resize(&mut self) {
-            match self.buckets.len() {
-                0 => { //// TODO: 初始化
+            match self.count {
+                0 => {
+                    //// TODO: 初始化
+                    self.buckets.reserve(16);
                 }
-                _ => { //// TODO: 扩容
+                _ => {
+                    //// TODO: 扩容
+                    let mut new_buckets = Vec::<Vec<(K, V)>>::with_capacity(self.count * 2);
+                    for bucket in self.buckets.iter_mut() {
+                        for (key, value) in bucket.drain(..) {
+                            use hash32::Murmur3Hasher;
+                            let mut fnv = Murmur3Hasher::default();
+                            key.hash(&mut fnv);
+                            let index = (fnv.finish() % new_buckets.len() as u64) as usize;
+                            new_buckets[index].push((key, value));
+                        }
+                    }
                 }
             }
         }
         fn insert(&mut self, key: K, value: V) -> Option<V> {
             use hash32::Murmur3Hasher;
+            if self.count >= self.buckets.len() {
+                self.resize();
+            }
+
             let mut fnv = Murmur3Hasher::default();
             key.hash(&mut fnv);
             let index = (fnv.finish() % self.buckets.len() as u64) as usize;
@@ -125,6 +144,7 @@ pub mod collections {
                 }
             }
             bucket.push((key, value));
+            self.count += 1;
             None
         }
     }
