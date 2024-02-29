@@ -92,19 +92,19 @@ pub mod collections {
         ptr::eq,
     };
 
-    struct HashMap<K, V> {
+    pub struct HashMap<K, V> {
         buckets: Vec<Vec<(K, V)>>,
         count: usize,
     }
 
     impl<K: hash::Hash + Eq, V: Clone> HashMap<K, V> {
-        fn new() -> Self {
+        pub fn new() -> Self {
             Self {
                 buckets: Vec::with_capacity(0),
                 count: 0,
             }
         }
-        fn resize(&mut self) {
+        pub fn resize(&mut self) {
             match self.count {
                 0 => {
                     //// TODO: 初始化
@@ -125,7 +125,7 @@ pub mod collections {
                 }
             }
         }
-        fn insert(&mut self, key: K, value: V) -> Option<V> {
+        pub fn insert(&mut self, key: K, value: V) -> Option<V> {
             use hash32::Murmur3Hasher;
             if self.count >= self.buckets.len() {
                 self.resize();
@@ -145,17 +145,6 @@ pub mod collections {
             }
             bucket.push((key, value));
             self.count += 1;
-            None
-        }
-    }
-    impl<'a, K, V> Iterator for &'a HashMap<K, V> {
-        type Item = &'a (K, V);
-        fn next(&mut self) -> Option<Self::Item> {
-            for bucket in self.buckets.iter() {
-                for item in bucket.iter() {
-                    return Some(item);
-                }
-            }
             None
         }
     }
