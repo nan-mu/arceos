@@ -132,17 +132,17 @@ pub mod collections {
             }
         }
         fn insert(&mut self, key: K, value: V) {
-            use core::hash::BuildHasherDefault;
-            let mut default = BuildHasherDefault::default();
-            let hash = key.hash(&mut default);
-            let bucket = &mut self.buckets[hash as usize % self.buckets.len()];
-            for (k, v) in bucket {
-                if k == &key {
-                    *v = value;
-                    return;
-                }
-            }
-            bucket.push((key, value));
+            use hash32::FnvHasher;
+            let mut fnv = FnvHasher::default();
+            let hash = key.hash(&mut fnv);
+            // let bucket = &mut self.buckets[hash as usize % self.buckets.len()];
+            // for (k, v) in bucket {
+            //     if k == &key {
+            //         *v = value;
+            //         return;
+            //     }
+            // }
+            // bucket.push((key, value));
         }
     }
 }
