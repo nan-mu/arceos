@@ -148,4 +148,15 @@ pub mod collections {
             None
         }
     }
+    impl<'a, K, V> Iterator for &'a HashMap<K, V> {
+        type Item = &'a (K, V);
+        fn next(&mut self) -> Option<Self::Item> {
+            for bucket in self.buckets.iter() {
+                for item in bucket.iter() {
+                    return Some(item);
+                }
+            }
+            None
+        }
+    }
 }

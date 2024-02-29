@@ -35,7 +35,7 @@ fn test_hashmap(rng: &mut impl RngCore) {
             assert_eq!(k.parse::<u32>().unwrap(), *v);
         }
     }
-    println!("test_btree_map() OK!");
+    println!("test_hashmap() OK!");
 }
 
 #[cfg_attr(feature = "axstd", no_mangle)]
