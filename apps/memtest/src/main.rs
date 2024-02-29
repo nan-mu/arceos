@@ -30,7 +30,8 @@ fn test_hashmap(rng: &mut impl RngCore) {
         let key = format!("key_{value}");
         m.insert(key, value);
     }
-    for (k, v) in m.iter() {
+    let a = m.iter();
+    for (k, v) in a {
         if let Some(k) = k.strip_prefix("key_") {
             assert_eq!(k.parse::<u32>().unwrap(), *v);
         }

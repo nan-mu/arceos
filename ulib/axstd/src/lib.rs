@@ -89,6 +89,7 @@ pub mod collections {
     use alloc::vec::Vec;
     use core::{
         hash::{self, Hasher},
+        mem,
         ptr::eq,
     };
 
@@ -99,53 +100,68 @@ pub mod collections {
 
     impl<K: hash::Hash + Eq, V: Clone> HashMap<K, V> {
         pub fn new() -> Self {
-            Self {
-                buckets: Vec::with_capacity(0),
-                count: 0,
-            }
+            //初始为1
+            let mut buckets = Vec::new();
+            buckets.push(Vec::new());
+            Self { buckets, count: 0 }
         }
         pub fn resize(&mut self) {
-            match self.count {
-                0 => {
-                    //// TODO: 初始化
-                    self.buckets.reserve(16);
-                }
-                _ => {
-                    //// TODO: 扩容
-                    let mut new_buckets = Vec::<Vec<(K, V)>>::with_capacity(self.count * 2);
-                    for bucket in self.buckets.iter_mut() {
-                        for (key, value) in bucket.drain(..) {
-                            use hash32::Murmur3Hasher;
-                            let mut fnv = Murmur3Hasher::default();
-                            key.hash(&mut fnv);
-                            let index = (fnv.finish() % new_buckets.len() as u64) as usize;
-                            new_buckets[index].push((key, value));
-                        }
-                    }
+            //// TODO: 扩容
+            let mut new_buckets = Vec::<Vec<(K, V)>>::with_capacity(self.count * 2);
+            new_buckets.extend((0..self.count * 2).map(|_| Vec::new()));
+            for bucket in self.buckets.iter_mut() {
+                for (key, value) in bucket.drain(..) {
+                    use hash32::Murmur3Hasher;
+                    let mut fnv = Murmur3Hasher::default();
+                    key.hash(&mut fnv);
+                    let index = (fnv.finish() % new_buckets.len() as u64) as usize;
+                    new_buckets[index].push((key, value));
                 }
             }
+            let _ = mem::replace(&mut self.buckets, new_buckets);
         }
         pub fn insert(&mut self, key: K, value: V) -> Option<V> {
-            use hash32::Murmur3Hasher;
             if self.count >= self.buckets.len() {
                 self.resize();
             }
-
-            let mut fnv = Murmur3Hasher::default();
+            use hash32::{FnvHasher, Hasher};
+            let mut fnv = FnvHasher::default();
             key.hash(&mut fnv);
-            let index = (fnv.finish() % self.buckets.len() as u64) as usize;
+            // println!(
+            //     "len: {}, capacity: {}",
+            //     self.buckets.len(),
+            //     self.buckets.capacity()
+            // );
+            let index = (fnv.finish32() % self.buckets.len() as u32) as usize;
             let bucket = &mut self.buckets[index];
             for (k, v) in bucket.iter_mut() {
                 if eq(k, &key) {
-                    //假如找到key相同的tuple，就更新，返回原来的
-                    let temp = v.clone();
-                    *v = value;
-                    return Some(temp);
+                    return Some(mem::replace(v, value));
                 }
             }
             bucket.push((key, value));
             self.count += 1;
             None
+        }
+        pub fn iter(&self) -> HashMapIter<'_, K, V> {
+            let mut unvisited = Vec::with_capacity(self.count);
+            for bucket in self.buckets.iter() {
+                for item in bucket.iter() {
+                    unvisited.push(item);
+                }
+            }
+            HashMapIter { unvisited }
+        }
+    }
+
+    pub struct HashMapIter<'a, K, V> {
+        unvisited: Vec<&'a (K, V)>,
+    }
+
+    impl<'a, K, V> Iterator for HashMapIter<'a, K, V> {
+        type Item = &'a (K, V);
+        fn next(&mut self) -> Option<Self::Item> {
+            self.unvisited.pop()
         }
     }
 }
