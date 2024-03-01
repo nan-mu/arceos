@@ -1,0 +1,893 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 44fd07c..13e038c 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -471,6 +471,7 @@ dependencies = [
+  "axerrno",
+  "axfeat",
+  "axio",
++ "hash32 0.3.1",
+  "spinlock",
+ ]
+ 
+@@ -1048,6 +1049,13 @@ dependencies = [
+  "byteorder",
+ ]
+ 
++[[package]]
++name = "hash32"
++version = "0.3.1"
++dependencies = [
++ "byteorder",
++]
++
+ [[package]]
+ name = "hashbrown"
+ version = "0.14.0"
+@@ -1061,7 +1069,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "db04bc24a18b9ea980628ecf00e6c0264f3c1426dac36c00cb49b6fbad8b0743"
+ dependencies = [
+  "atomic-polyfill",
+- "hash32",
++ "hash32 0.2.1",
+  "rustc_version",
+  "spin 0.9.8",
+  "stable_deref_trait",
+diff --git a/apps/memtest/src/main.rs b/apps/memtest/src/main.rs
+index e23e95e..de07a6f 100644
+--- a/apps/memtest/src/main.rs
++++ b/apps/memtest/src/main.rs
+@@ -6,7 +6,7 @@
+ extern crate axstd as std;
+ 
+ use rand::{rngs::SmallRng, RngCore, SeedableRng};
+-use std::collections::BTreeMap;
++use std::collections::HashMap;
+ use std::vec::Vec;
+ 
+ fn test_vec(rng: &mut impl RngCore) {
+@@ -22,20 +22,21 @@ fn test_vec(rng: &mut impl RngCore) {
+     println!("test_vec() OK!");
+ }
+ 
+-fn test_btree_map(rng: &mut impl RngCore) {
++fn test_hashmap(rng: &mut impl RngCore) {
+     const N: usize = 50_000;
+-    let mut m = BTreeMap::new();
++    let mut m = HashMap::new();
+     for _ in 0..N {
+         let value = rng.next_u32();
+         let key = format!("key_{value}");
+         m.insert(key, value);
+     }
+-    for (k, v) in m.iter() {
++    let a = m.iter();
++    for (k, v) in a {
+         if let Some(k) = k.strip_prefix("key_") {
+             assert_eq!(k.parse::<u32>().unwrap(), *v);
+         }
+     }
+-    println!("test_btree_map() OK!");
++    println!("test_test_hashmap_map() OK!");
+ }
+ 
+ #[cfg_attr(feature = "axstd", no_mangle)]
+@@ -44,7 +45,7 @@ fn main() {
+ 
+     let mut rng = SmallRng::seed_from_u64(0xdead_beef);
+     test_vec(&mut rng);
+-    test_btree_map(&mut rng);
++    test_hashmap(&mut rng);
+ 
+     println!("Memory tests run OK!");
+ }
+diff --git a/crates/hash32/Cargo.toml b/crates/hash32/Cargo.toml
+new file mode 100644
+index 0000000..b05df19
+--- /dev/null
++++ b/crates/hash32/Cargo.toml
+@@ -0,0 +1,13 @@
++[package]
++authors = ["Jorge Aparicio <jorge@japaric.io>"]
++categories = ["no-std"]
++description = "32-bit hashing algorithms"
++keywords = ["32-bit", "hash", "fnv", "murmur3"]
++license = "MIT OR Apache-2.0"
++name = "hash32"
++repository = "https://github.com/japaric/hash32"
++version = "0.3.1"
++
++[dependencies.byteorder]
++default-features = false
++version = "1.2.2"
+diff --git a/crates/hash32/LICENSE-APACHE b/crates/hash32/LICENSE-APACHE
+new file mode 100644
+index 0000000..f47c941
+--- /dev/null
++++ b/crates/hash32/LICENSE-APACHE
+@@ -0,0 +1,201 @@
++                              Apache License
++                        Version 2.0, January 2004
++                     http://www.apache.org/licenses/
++
++TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
++
++1. Definitions.
++
++   "License" shall mean the terms and conditions for use, reproduction,
++   and distribution as defined by Sections 1 through 9 of this document.
++
++   "Licensor" shall mean the copyright owner or entity authorized by
++   the copyright owner that is granting the License.
++
++   "Legal Entity" shall mean the union of the acting entity and all
++   other entities that control, are controlled by, or are under common
++   control with that entity. For the purposes of this definition,
++   "control" means (i) the power, direct or indirect, to cause the
++   direction or management of such entity, whether by contract or
++   otherwise, or (ii) ownership of fifty percent (50%) or more of the
++   outstanding shares, or (iii) beneficial ownership of such entity.
++
++   "You" (or "Your") shall mean an individual or Legal Entity
++   exercising permissions granted by this License.
++
++   "Source" form shall mean the preferred form for making modifications,
++   including but not limited to software source code, documentation
++   source, and configuration files.
++
++   "Object" form shall mean any form resulting from mechanical
++   transformation or translation of a Source form, including but
++   not limited to compiled object code, generated documentation,
++   and conversions to other media types.
++
++   "Work" shall mean the work of authorship, whether in Source or
++   Object form, made available under the License, as indicated by a
++   copyright notice that is included in or attached to the work
++   (an example is provided in the Appendix below).
++
++   "Derivative Works" shall mean any work, whether in Source or Object
++   form, that is based on (or derived from) the Work and for which the
++   editorial revisions, annotations, elaborations, or other modifications
++   represent, as a whole, an original work of authorship. For the purposes
++   of this License, Derivative Works shall not include works that remain
++   separable from, or merely link (or bind by name) to the interfaces of,
++   the Work and Derivative Works thereof.
++
++   "Contribution" shall mean any work of authorship, including
++   the original version of the Work and any modifications or additions
++   to that Work or Derivative Works thereof, that is intentionally
++   submitted to Licensor for inclusion in the Work by the copyright owner
++   or by an individual or Legal Entity authorized to submit on behalf of
++   the copyright owner. For the purposes of this definition, "submitted"
++   means any form of electronic, verbal, or written communication sent
++   to the Licensor or its representatives, including but not limited to
++   communication on electronic mailing lists, source code control systems,
++   and issue tracking systems that are managed by, or on behalf of, the
++   Licensor for the purpose of discussing and improving the Work, but
++   excluding communication that is conspicuously marked or otherwise
++   designated in writing by the copyright owner as "Not a Contribution."
++
++   "Contributor" shall mean Licensor and any individual or Legal Entity
++   on behalf of whom a Contribution has been received by Licensor and
++   subsequently incorporated within the Work.
++
++2. Grant of Copyright License. Subject to the terms and conditions of
++   this License, each Contributor hereby grants to You a perpetual,
++   worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++   copyright license to reproduce, prepare Derivative Works of,
++   publicly display, publicly perform, sublicense, and distribute the
++   Work and such Derivative Works in Source or Object form.
++
++3. Grant of Patent License. Subject to the terms and conditions of
++   this License, each Contributor hereby grants to You a perpetual,
++   worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++   (except as stated in this section) patent license to make, have made,
++   use, offer to sell, sell, import, and otherwise transfer the Work,
++   where such license applies only to those patent claims licensable
++   by such Contributor that are necessarily infringed by their
++   Contribution(s) alone or by combination of their Contribution(s)
++   with the Work to which such Contribution(s) was submitted. If You
++   institute patent litigation against any entity (including a
++   cross-claim or counterclaim in a lawsuit) alleging that the Work
++   or a Contribution incorporated within the Work constitutes direct
++   or contributory patent infringement, then any patent licenses
++   granted to You under this License for that Work shall terminate
++   as of the date such litigation is filed.
++
++4. Redistribution. You may reproduce and distribute copies of the
++   Work or Derivative Works thereof in any medium, with or without
++   modifications, and in Source or Object form, provided that You
++   meet the following conditions:
++
++   (a) You must give any other recipients of the Work or
++       Derivative Works a copy of this License; and
++
++   (b) You must cause any modified files to carry prominent notices
++       stating that You changed the files; and
++
++   (c) You must retain, in the Source form of any Derivative Works
++       that You distribute, all copyright, patent, trademark, and
++       attribution notices from the Source form of the Work,
++       excluding those notices that do not pertain to any part of
++       the Derivative Works; and
++
++   (d) If the Work includes a "NOTICE" text file as part of its
++       distribution, then any Derivative Works that You distribute must
++       include a readable copy of the attribution notices contained
++       within such NOTICE file, excluding those notices that do not
++       pertain to any part of the Derivative Works, in at least one
++       of the following places: within a NOTICE text file distributed
++       as part of the Derivative Works; within the Source form or
++       documentation, if provided along with the Derivative Works; or,
++       within a display generated by the Derivative Works, if and
++       wherever such third-party notices normally appear. The contents
++       of the NOTICE file are for informational purposes only and
++       do not modify the License. You may add Your own attribution
++       notices within Derivative Works that You distribute, alongside
++       or as an addendum to the NOTICE text from the Work, provided
++       that such additional attribution notices cannot be construed
++       as modifying the License.
++
++   You may add Your own copyright statement to Your modifications and
++   may provide additional or different license terms and conditions
++   for use, reproduction, or distribution of Your modifications, or
++   for any such Derivative Works as a whole, provided Your use,
++   reproduction, and distribution of the Work otherwise complies with
++   the conditions stated in this License.
++
++5. Submission of Contributions. Unless You explicitly state otherwise,
++   any Contribution intentionally submitted for inclusion in the Work
++   by You to the Licensor shall be under the terms and conditions of
++   this License, without any additional terms or conditions.
++   Notwithstanding the above, nothing herein shall supersede or modify
++   the terms of any separate license agreement you may have executed
++   with Licensor regarding such Contributions.
++
++6. Trademarks. This License does not grant permission to use the trade
++   names, trademarks, service marks, or product names of the Licensor,
++   except as required for reasonable and customary use in describing the
++   origin of the Work and reproducing the content of the NOTICE file.
++
++7. Disclaimer of Warranty. Unless required by applicable law or
++   agreed to in writing, Licensor provides the Work (and each
++   Contributor provides its Contributions) on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
++   implied, including, without limitation, any warranties or conditions
++   of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
++   PARTICULAR PURPOSE. You are solely responsible for determining the
++   appropriateness of using or redistributing the Work and assume any
++   risks associated with Your exercise of permissions under this License.
++
++8. Limitation of Liability. In no event and under no legal theory,
++   whether in tort (including negligence), contract, or otherwise,
++   unless required by applicable law (such as deliberate and grossly
++   negligent acts) or agreed to in writing, shall any Contributor be
++   liable to You for damages, including any direct, indirect, special,
++   incidental, or consequential damages of any character arising as a
++   result of this License or out of the use or inability to use the
++   Work (including but not limited to damages for loss of goodwill,
++   work stoppage, computer failure or malfunction, or any and all
++   other commercial damages or losses), even if such Contributor
++   has been advised of the possibility of such damages.
++
++9. Accepting Warranty or Additional Liability. While redistributing
++   the Work or Derivative Works thereof, You may choose to offer,
++   and charge a fee for, acceptance of support, warranty, indemnity,
++   or other liability obligations and/or rights consistent with this
++   License. However, in accepting such obligations, You may act only
++   on Your own behalf and on Your sole responsibility, not on behalf
++   of any other Contributor, and only if You agree to indemnify,
++   defend, and hold each Contributor harmless for any liability
++   incurred by, or claims asserted against, such Contributor by reason
++   of your accepting any such warranty or additional liability.
++
++END OF TERMS AND CONDITIONS
++
++APPENDIX: How to apply the Apache License to your work.
++
++   To apply the Apache License to your work, attach the following
++   boilerplate notice, with the fields enclosed by brackets "[]"
++   replaced with your own identifying information. (Don't include
++   the brackets!)  The text should be enclosed in the appropriate
++   comment syntax for the file format. We also recommend that a
++   file or class name and description of purpose be included on the
++   same "printed page" as the copyright notice for easier
++   identification within third-party archives.
++
++Copyright [yyyy] [name of copyright owner]
++
++Licensed under the Apache License, Version 2.0 (the "License");
++you may not use this file except in compliance with the License.
++You may obtain a copy of the License at
++
++	http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
+diff --git a/crates/hash32/LICENSE-MIT b/crates/hash32/LICENSE-MIT
+new file mode 100644
+index 0000000..6516dee
+--- /dev/null
++++ b/crates/hash32/LICENSE-MIT
+@@ -0,0 +1,25 @@
++Copyright (c) 2018 Jorge Aparicio
++
++Permission is hereby granted, free of charge, to any
++person obtaining a copy of this software and associated
++documentation files (the "Software"), to deal in the
++Software without restriction, including without
++limitation the rights to use, copy, modify, merge,
++publish, distribute, sublicense, and/or sell copies of
++the Software, and to permit persons to whom the Software
++is furnished to do so, subject to the following
++conditions:
++
++The above copyright notice and this permission notice
++shall be included in all copies or substantial portions
++of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
++ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
++TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
++PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
++SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
++CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
++IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++DEALINGS IN THE SOFTWARE.
+diff --git a/crates/hash32/README.md b/crates/hash32/README.md
+new file mode 100644
+index 0000000..5f3832b
+--- /dev/null
++++ b/crates/hash32/README.md
+@@ -0,0 +1,21 @@
++# `hash32`
++
++> 32-bit hashing machinery
++
++## [Documentation](https://docs.rs/hash32)
++
++## License
++
++Licensed under either of
++
++- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
++  http://www.apache.org/licenses/LICENSE-2.0)
++- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
++
++at your option.
++
++### Contribution
++
++Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the
++work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any
++additional terms or conditions.
+diff --git a/crates/hash32/src/fnv.rs b/crates/hash32/src/fnv.rs
+new file mode 100644
+index 0000000..9dbcbc7
+--- /dev/null
++++ b/crates/hash32/src/fnv.rs
+@@ -0,0 +1,37 @@
++use crate::Hasher as _;
++
++const BASIS: u32 = 0x811c9dc5;
++const PRIME: u32 = 0x1000193;
++
++/// 32-bit Fowler-Noll-Vo hasher
++pub struct Hasher {
++    state: u32,
++}
++
++impl Default for Hasher {
++    fn default() -> Self {
++        Hasher { state: BASIS }
++    }
++}
++
++impl crate::Hasher for Hasher {
++    #[inline]
++    fn finish32(&self) -> u32 {
++        self.state
++    }
++}
++
++impl core::hash::Hasher for Hasher {
++    #[inline]
++    fn write(&mut self, bytes: &[u8]) {
++        for byte in bytes {
++            self.state ^= u32::from(*byte);
++            self.state = self.state.wrapping_mul(PRIME);
++        }
++    }
++
++    #[inline]
++    fn finish(&self) -> u64 {
++        self.finish32().into()
++    }
++}
+diff --git a/crates/hash32/src/lib.rs b/crates/hash32/src/lib.rs
+new file mode 100644
+index 0000000..56fea44
+--- /dev/null
++++ b/crates/hash32/src/lib.rs
+@@ -0,0 +1,141 @@
++//! 32-bit hashing algorithms
++//!
++//! # Why?
++//!
++//! Because 32-bit architectures are a thing (e.g. ARM Cortex-M) and you don't want your hashing
++//! function to pull in a bunch of slow 64-bit compiler intrinsics (software implementations of
++//! 64-bit operations).
++//!
++//! # Relationship to `core::hash`
++//!
++//! This crate extends [`core::hash`] with a 32-bit version of `Hasher`, which extends
++//! `core::hash::Hasher`. It requires that the hasher only performs 32-bit operations when computing
++//! the hash, and adds [`finish32`] to get the hasher's result as a `u32`. The standard `finish`
++//! method should just zero-extend this result.
++//!
++//! Since it extends `core::hash::Hasher`, `Hasher` can be used with any type which implements the
++//! standard `Hash` trait.
++//!
++//! This crate also adds a version of `BuildHasherDefault` with a const constructor, to work around
++//! the `core` version's lack of one.
++//!
++//! [`core::hash`]: https://doc.rust-lang.org/std/hash/index.html
++//! [`finish32`]: crate::Hasher::finish32
++//!
++//! # Hashers
++//!
++//! This crate provides implementations of the following 32-bit hashing algorithms:
++//!
++//! - [Fowler-Noll-Vo](struct.FnvHasher.html)
++//! - [MurmurHash3](struct.Murmur3Hasher.html)
++//!
++//! # Generic code
++//!
++//! In generic code, the trait bound `H: core::hash::Hasher` accepts *both* 64-bit hashers like
++//! `std::collections::hash_map::DefaultHasher`; and 32-bit hashers like the ones defined in this
++//! crate (`hash32::FnvHasher` and `hash32::Murmur3Hasher`)
++//!
++//! The trait bound `H: hash32::Hasher` is *more* restrictive as it only accepts 32-bit hashers.
++//!
++//! The `BuildHasherDefault<H>` type implements the `core::hash::BuildHasher` trait so it can
++//! construct both 32-bit and 64-bit hashers. To constrain the type to only produce 32-bit hasher
++//! you can add the trait bound `H::Hasher: hash32::Hasher`
++//!
++//! # MSRV
++//!
++//! This crate is guaranteed to compile on latest stable Rust. It *might* compile on older
++//! versions but that may change in any new patch release.
++
++#![deny(missing_docs)]
++#![deny(warnings)]
++#![no_std]
++
++extern crate byteorder;
++
++use core::fmt;
++use core::hash::BuildHasher;
++use core::marker::PhantomData;
++
++pub use fnv::Hasher as FnvHasher;
++pub use murmur3::Hasher as Murmur3Hasher;
++
++mod fnv;
++mod murmur3;
++
++/// A copy of [`core::hash::BuildHasherDefault`][0], but with a const constructor.
++///
++/// This will eventually be deprecated once the version in `core` becomes const-constructible
++/// (presumably using `const Default`).
++///
++/// [0]: https://doc.rust-lang.org/core/hash/struct.BuildHasherDefault.html
++pub struct BuildHasherDefault<H> {
++    _marker: PhantomData<H>,
++}
++
++impl<H> Default for BuildHasherDefault<H> {
++    fn default() -> Self {
++        BuildHasherDefault {
++            _marker: PhantomData,
++        }
++    }
++}
++
++impl<H> Clone for BuildHasherDefault<H> {
++    fn clone(&self) -> Self {
++        BuildHasherDefault::default()
++    }
++}
++
++impl<H> PartialEq for BuildHasherDefault<H> {
++    fn eq(&self, _other: &BuildHasherDefault<H>) -> bool {
++        true
++    }
++}
++
++impl<H> Eq for BuildHasherDefault<H> {}
++
++impl<H> fmt::Debug for BuildHasherDefault<H> {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.pad("BuildHasherDefault")
++    }
++}
++
++impl<H> BuildHasherDefault<H> {
++    /// `const` constructor
++    pub const fn new() -> Self {
++        BuildHasherDefault {
++            _marker: PhantomData,
++        }
++    }
++}
++
++impl<H> BuildHasher for BuildHasherDefault<H>
++where
++    H: Default + core::hash::Hasher,
++{
++    type Hasher = H;
++
++    fn build_hasher(&self) -> Self::Hasher {
++        H::default()
++    }
++}
++
++/// An extension of [core::hash::Hasher][0] for hashers which use 32 bits.
++///
++/// For hashers which implement this trait, the standard `finish` method should just return a
++/// zero-extended version of the result of `finish32`.
++///
++/// [0]: https://doc.rust-lang.org/core/hash/trait.Hasher.html
++///
++/// # Contract
++///
++/// Implementers of this trait must *not* perform any 64-bit (or 128-bit) operation while computing
++/// the hash.
++pub trait Hasher: core::hash::Hasher {
++    /// The equivalent of [`core::hash::Hasher.finish`][0] for 32-bit hashers.
++    ///
++    /// This returns the hash directly; `finish` zero-extends it to 64 bits for compatibility.
++    ///
++    /// [0]: https://doc.rust-lang.org/std/hash/trait.Hasher.html#tymethod.finish
++    fn finish32(&self) -> u32;
++}
+diff --git a/crates/hash32/src/murmur3.rs b/crates/hash32/src/murmur3.rs
+new file mode 100644
+index 0000000..4fb63f1
+--- /dev/null
++++ b/crates/hash32/src/murmur3.rs
+@@ -0,0 +1,206 @@
++use core::slice;
++use core::mem::MaybeUninit;
++
++use byteorder::{ByteOrder, LE};
++
++use crate::Hasher as _;
++
++/// 32-bit MurmurHash3 hasher
++pub struct Hasher {
++    buf: Buffer,
++    index: Index,
++    processed: u32,
++    state: State,
++}
++
++struct State(u32);
++
++#[derive(Clone, Copy)]
++#[repr(align(4))]
++struct Buffer {
++    bytes: MaybeUninit<[u8; 4]>,
++}
++
++#[derive(Clone, Copy, PartialEq)]
++enum Index {
++    _0,
++    _1,
++    _2,
++    _3,
++}
++
++impl Index {
++    fn usize(&self) -> usize {
++        match *self {
++            Index::_0 => 0,
++            Index::_1 => 1,
++            Index::_2 => 2,
++            Index::_3 => 3,
++        }
++    }
++}
++
++impl From<usize> for Index {
++    fn from(x: usize) -> Self {
++        match x % 4 {
++            0 => Index::_0,
++            1 => Index::_1,
++            2 => Index::_2,
++            3 => Index::_3,
++            _ => unreachable!(),
++        }
++    }
++}
++
++impl Hasher {
++    fn push(&mut self, buf: &[u8]) {
++        let start = self.index.usize();
++        let len = buf.len();
++        // NOTE(unsafe) avoid calling `memcpy` on a 0-3 byte copy
++        // self.buf.bytes[start..start+len].copy_from(buf);
++        for i in 0..len {
++            unsafe {
++                *self.buf.bytes.assume_init_mut().get_unchecked_mut(start + i) = *buf.get_unchecked(i);
++            }
++        }
++        self.index = Index::from(start + len);
++    }
++}
++
++impl Default for Hasher {
++    #[allow(deprecated)]
++    fn default() -> Self {
++        Hasher {
++            buf: Buffer { bytes: MaybeUninit::uninit() },
++            index: Index::_0,
++            processed: 0,
++            state: State(0),
++        }
++    }
++}
++
++impl crate::Hasher for Hasher {
++    fn finish32(&self) -> u32 {
++        // tail
++        let mut state = match self.index {
++            Index::_3 => {
++                let mut block = 0;
++                unsafe {
++                    block ^= u32::from(self.buf.bytes.assume_init_ref()[2]) << 16;
++                    block ^= u32::from(self.buf.bytes.assume_init_ref()[1]) << 8;
++                    block ^= u32::from(self.buf.bytes.assume_init_ref()[0]);
++                }
++                self.state.0 ^ pre_mix(block)
++            }
++            Index::_2 => {
++                let mut block = 0;
++                unsafe {
++                    block ^= u32::from(self.buf.bytes.assume_init_ref()[1]) << 8;
++                    block ^= u32::from(self.buf.bytes.assume_init_ref()[0]);
++                }
++                self.state.0 ^ pre_mix(block)
++            }
++            Index::_1 => {
++                let mut block = 0;
++                unsafe {
++                    block ^= u32::from(self.buf.bytes.assume_init_ref()[0]);
++                }
++                self.state.0 ^ pre_mix(block)
++            }
++            Index::_0 => self.state.0,
++        };
++
++        // finalization mix
++        state ^= self.processed;
++        state ^= state >> 16;
++        state = state.wrapping_mul(0x85ebca6b);
++        state ^= state >> 13;
++        state = state.wrapping_mul(0xc2b2ae35);
++        state ^= state >> 16;
++
++        state
++    }
++}
++
++impl core::hash::Hasher for Hasher {
++    #[inline]
++    fn write(&mut self, bytes: &[u8]) {
++        let len = bytes.len();
++        self.processed += len as u32;
++
++        let body = if self.index == Index::_0 {
++            bytes
++        } else {
++            let index = self.index.usize();
++            if len + index >= 4 {
++                // we can complete a block using the data left in the buffer
++                // NOTE(unsafe) avoid panicking branch (`slice_index_len_fail`)
++                // let (head, body) = bytes.split_at(4 - index);
++                let mid = 4 - index;
++                let head = unsafe { slice::from_raw_parts(bytes.as_ptr(), mid) };
++                let body = unsafe {
++                    slice::from_raw_parts(bytes.as_ptr().offset(mid as isize), len - mid)
++                };
++
++                // NOTE(unsafe) avoid calling `memcpy` on a 0-3 byte copy
++                // self.buf.bytes[index..].copy_from_slice(head);
++                for i in 0..4 - index {
++                    unsafe {
++                        *self.buf.bytes.assume_init_mut().get_unchecked_mut(index + i) = *head.get_unchecked(i);
++                    }
++                }
++
++                self.index = Index::_0;
++
++                self.state.process_block(&self.buf.bytes);
++
++                body
++            } else {
++                bytes
++            }
++        };
++
++        for block in body.chunks(4) {
++            if block.len() == 4 {
++                self.state
++                    .process_block(unsafe { &*(block.as_ptr() as *const _) });
++            } else {
++                self.push(block);
++            }
++        }
++
++        // XXX is this faster?
++        // for block in body.exact_chunks(4) {
++        //     self.state
++        //         .process_block(unsafe { &*(block.as_ptr() as *const _) });
++        // }
++
++        // let tail = body.split_at(body.len() / 4 * 4).1;
++
++        // self.push(tail);
++    }
++
++    #[inline]
++    fn finish(&self) -> u64 {
++        self.finish32().into()
++    }
++}
++
++const C1: u32 = 0xcc9e2d51;
++const C2: u32 = 0x1b873593;
++const R1: u32 = 15;
++
++impl State {
++    fn process_block(&mut self, block: &MaybeUninit<[u8; 4]>) {
++        self.0 ^= pre_mix(LE::read_u32(unsafe { block.assume_init_ref() }));
++        self.0 = self.0.rotate_left(13);
++        self.0 = 5u32.wrapping_mul(self.0).wrapping_add(0xe6546b64);
++    }
++}
++
++fn pre_mix(mut block: u32) -> u32 {
++    block = block.wrapping_mul(C1);
++    block = block.rotate_left(R1);
++    block = block.wrapping_mul(C2);
++    block
++}
+diff --git a/ulib/axstd/Cargo.toml b/ulib/axstd/Cargo.toml
+index 83239c3..60f700e 100644
+--- a/ulib/axstd/Cargo.toml
++++ b/ulib/axstd/Cargo.toml
+@@ -74,3 +74,4 @@ arceos_api = { path = "../../api/arceos_api" }
+ axio = { path = "../../crates/axio" }
+ axerrno = { path = "../../crates/axerrno" }
+ spinlock = { path = "../../crates/spinlock" }
++hash32 = { path = "../../crates/hash32" }
+diff --git a/ulib/axstd/src/lib.rs b/ulib/axstd/src/lib.rs
+index d256cd5..997346f 100644
+--- a/ulib/axstd/src/lib.rs
++++ b/ulib/axstd/src/lib.rs
+@@ -49,13 +49,22 @@
+ #![cfg_attr(all(not(test), not(doc)), no_std)]
+ #![feature(doc_cfg)]
+ #![feature(doc_auto_cfg)]
++// 作业里提到的宏
++// ulib/axstd/src/lib.rs
++#![feature(hashmap_internals)]
++#![feature(extend_one)]
++#![feature(hasher_prefixfree_extras)]
++#![feature(error_in_core)]
++#![feature(try_reserve_kind)]
++#![feature(thread_local)]
++#![feature(const_hash)]
+ 
+-#[cfg(feature = "alloc")]
++// #[cfg(feature = "alloc")]
+ extern crate alloc;
+ 
+-#[cfg(feature = "alloc")]
++// #[cfg(feature = "alloc")]
+ #[doc(no_inline)]
+-pub use alloc::{boxed, collections, format, string, vec};
++pub use alloc::{boxed, format, string, vec};
+ 
+ #[doc(no_inline)]
+ pub use core::{arch, cell, cmp, hint, marker, mem, ops, ptr, slice, str};
+@@ -75,3 +84,84 @@ pub mod time;
+ pub mod fs;
+ #[cfg(feature = "net")]
+ pub mod net;
++
++pub mod collections {
++    use alloc::vec::Vec;
++    use core::{
++        hash::{self, Hasher},
++        mem,
++        ptr::eq,
++    };
++
++    pub struct HashMap<K, V> {
++        buckets: Vec<Vec<(K, V)>>,
++        count: usize,
++    }
++
++    impl<K: hash::Hash + Eq, V: Clone> HashMap<K, V> {
++        pub fn new() -> Self {
++            //初始为1
++            let mut buckets = Vec::new();
++            buckets.push(Vec::new());
++            Self { buckets, count: 0 }
++        }
++        pub fn resize(&mut self) {
++            //// TODO: 扩容
++            let mut new_buckets = Vec::<Vec<(K, V)>>::with_capacity(self.count * 2);
++            new_buckets.extend((0..self.count * 2).map(|_| Vec::new()));
++            for bucket in self.buckets.iter_mut() {
++                for (key, value) in bucket.drain(..) {
++                    use hash32::Murmur3Hasher;
++                    let mut fnv = Murmur3Hasher::default();
++                    key.hash(&mut fnv);
++                    let index = (fnv.finish() % new_buckets.len() as u64) as usize;
++                    new_buckets[index].push((key, value));
++                }
++            }
++            let _ = mem::replace(&mut self.buckets, new_buckets);
++        }
++        pub fn insert(&mut self, key: K, value: V) -> Option<V> {
++            if self.count >= self.buckets.len() {
++                self.resize();
++            }
++            use hash32::{FnvHasher, Hasher};
++            let mut fnv = FnvHasher::default();
++            key.hash(&mut fnv);
++            // println!(
++            //     "len: {}, capacity: {}",
++            //     self.buckets.len(),
++            //     self.buckets.capacity()
++            // );
++            let index = (fnv.finish32() % self.buckets.len() as u32) as usize;
++            let bucket = &mut self.buckets[index];
++            for (k, v) in bucket.iter_mut() {
++                if eq(k, &key) {
++                    return Some(mem::replace(v, value));
++                }
++            }
++            bucket.push((key, value));
++            self.count += 1;
++            None
++        }
++        pub fn iter(&self) -> HashMapIter<'_, K, V> {
++            let mut unvisited = Vec::with_capacity(self.count);
++            for bucket in self.buckets.iter() {
++                for item in bucket.iter() {
++                    unvisited.push(item);
++                }
++            }
++            HashMapIter { unvisited }
++        }
++    }
++
++    pub struct HashMapIter<'a, K, V> {
++        unvisited: Vec<&'a (K, V)>,
++    }
++
++    impl<'a, K, V> Iterator for HashMapIter<'a, K, V> {
++        type Item = &'a (K, V);
++        fn next(&mut self) -> Option<Self::Item> {
++            self.unvisited.pop()
++        }
++    }
++}
