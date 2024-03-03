@@ -95,6 +95,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         "buddy",
         AllocatorRc::new(BuddyByteAllocator::new(), pool.as_slice()),
     );
+    bench(
+        c,
+        "new",
+        AllocatorRc::new(BuddyByteAllocator::new(), pool.as_slice()),
+    );
 }
 
 criterion_group!(benches, criterion_benchmark);

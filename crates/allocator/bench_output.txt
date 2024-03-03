@@ -1,0 +1,109 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+system/vec_push_3M      time:   [2.3521 ms 2.3641 ms 2.3780 ms]
+                        change: [-3.7892% -1.7619% +0.0102%] (p = 0.08 > 0.05)
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+system/vec_rand_free_25K_64
+                        time:   [2.2996 ms 2.3099 ms 2.3248 ms]
+                        change: [+0.2389% +1.5141% +3.1727%] (p = 0.04 < 0.05)
+                        Change within noise threshold.
+Found 1 outliers among 10 measurements (10.00%)
+  1 (10.00%) high severe
+system/vec_rand_free_7500_520
+                        time:   [617.51 µs 621.17 µs 627.83 µs]
+                        change: [-1.5538% -0.6460% +0.4201%] (p = 0.27 > 0.05)
+                        No change in performance detected.
+Found 1 outliers among 10 measurements (10.00%)
+  1 (10.00%) high severe
+system/btree_map_50K    time:   [11.722 ms 11.764 ms 11.837 ms]
+                        change: [-0.9239% -0.2975% +0.3860%] (p = 0.41 > 0.05)
+                        No change in performance detected.
+Found 2 outliers among 10 measurements (20.00%)
+  2 (20.00%) high mild
+
+tlsf/vec_push_3M        time:   [3.2706 ms 3.3080 ms 3.3476 ms]
+                        change: [+1.9600% +3.2667% +4.6309%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 20 outliers among 100 measurements (20.00%)
+  3 (3.00%) high mild
+  17 (17.00%) high severe
+tlsf/vec_rand_free_25K_64
+                        time:   [1.6600 ms 1.6675 ms 1.6757 ms]
+                        change: [-1.8418% -1.0942% -0.3209%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 1 outliers among 10 measurements (10.00%)
+  1 (10.00%) high severe
+tlsf/vec_rand_free_7500_520
+                        time:   [414.01 µs 416.40 µs 420.71 µs]
+                        change: [-1.2040% +0.0606% +1.4288%] (p = 0.93 > 0.05)
+                        No change in performance detected.
+tlsf/btree_map_50K      time:   [11.279 ms 11.672 ms 12.431 ms]
+                        change: [-7.0268% -0.4045% +6.1727%] (p = 0.92 > 0.05)
+                        No change in performance detected.
+Found 2 outliers among 10 measurements (20.00%)
+  2 (20.00%) high severe
+
+slab/vec_push_3M        time:   [3.1398 ms 3.1518 ms 3.1661 ms]
+                        change: [-0.6928% -0.2456% +0.3460%] (p = 0.32 > 0.05)
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+slab/vec_rand_free_25K_64
+                        time:   [1.4788 ms 1.4884 ms 1.4975 ms]
+                        change: [-4.3748% -0.5909% +3.8227%] (p = 0.82 > 0.05)
+                        No change in performance detected.
+Found 1 outliers among 10 measurements (10.00%)
+  1 (10.00%) high severe
+slab/vec_rand_free_7500_520
+                        time:   [445.87 ms 454.79 ms 463.46 ms]
+                        change: [+75.176% +78.900% +82.654%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+slab/btree_map_50K      time:   [10.562 ms 10.610 ms 10.693 ms]
+                        change: [-5.0589% -3.3530% -1.6638%] (p = 0.00 < 0.05)
+                        Performance has improved.
+
+buddy/vec_push_3M       time:   [3.1714 ms 3.1823 ms 3.1959 ms]
+                        change: [-0.6104% -0.0962% +0.3926%] (p = 0.73 > 0.05)
+                        No change in performance detected.
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+buddy/vec_rand_free_25K_64
+                        time:   [2.3548 s 2.3853 s 2.4180 s]
+                        change: [+1.1895% +2.5313% +4.0110%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+buddy/vec_rand_free_7500_520
+                        time:   [417.35 ms 424.26 ms 432.18 ms]
+                        change: [+52.528% +55.466% +58.450%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+buddy/btree_map_50K     time:   [1.0203 s 1.0208 s 1.0213 s]
+                        change: [-0.1134% +0.0527% +0.2227%] (p = 0.57 > 0.05)
+                        No change in performance detected.
+
+new/vec_push_3M         time:   [3.1803 ms 3.1952 ms 3.2135 ms]
+                        change: [+0.3456% +0.9114% +1.5138%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) high mild
+  3 (3.00%) high severe
+new/vec_rand_free_25K_64
+                        time:   [2.3201 s 2.3341 s 2.3481 s]
+                        change: [-0.2990% +0.5403% +1.3805%] (p = 0.23 > 0.05)
+                        No change in performance detected.
+new/vec_rand_free_7500_520
+                        time:   [413.29 ms 422.11 ms 433.04 ms]
+                        change: [+51.027% +54.317% +58.300%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+new/btree_map_50K       time:   [1.0285 s 1.0372 s 1.0510 s]
+                        change: [+0.9192% +1.8185% +3.1460%] (p = 0.01 < 0.05)
+                        Change within noise threshold.
+Found 1 outliers among 10 measurements (10.00%)
+  1 (10.00%) high severe
+
