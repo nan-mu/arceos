@@ -30,6 +30,8 @@ cfg_if::cfg_if! {
         use allocator::BuddyByteAllocator as DefaultByteAllocator;
     } else if #[cfg(feature = "tlsf")] {
         use allocator::TlsfByteAllocator as DefaultByteAllocator;
+    } else if #[cfg(feature = "new")] {
+        use allocator::YourNewAllocator as DefaultByteAllocator;
     }
 }
 
@@ -66,6 +68,10 @@ impl GlobalAllocator {
             } else if #[cfg(feature = "buddy")] {
                 "buddy"
             } else if #[cfg(feature = "tlsf")] {
+                "TLSF"
+            } else if #[cfg(feature = "new")] {
+                "talc"
+            } else {
                 "TLSF"
             }
         }

@@ -11,10 +11,10 @@ documentation = "https://rcore-os.github.io/arceos/allocator/index.html"
 
 [features]
 default = []
-full = ["bitmap", "tlsf", "slab", "buddy", "allocator_api"]
+full = ["bitmap", "tlsf", "slab", "buddy", "allocator_api", "new"]
 
 bitmap = ["dep:bitmap-allocator"]
-
+new = []
 tlsf = ["dep:rlsf"]
 slab = ["dep:slab_allocator"]
 buddy = ["dep:buddy_system_allocator"]
