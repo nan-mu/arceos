@@ -44,6 +44,7 @@ impl ByteAllocator for YourNewAllocator {
 
     fn dealloc(&mut self, pos: NonNull<u8>, layout: Layout) {
         unsafe { self.talc.free(pos, layout) };
+        //这里有歧义，talc实现了一个free函数用于释放，实现了shrink用于收缩。看起来两者都实现了dealloc。不知道用哪个
     }
 
     fn total_bytes(&self) -> usize {
@@ -51,10 +52,10 @@ impl ByteAllocator for YourNewAllocator {
     }
 
     fn used_bytes(&self) -> usize {
-        // self.inner.stats_alloc_actual()
+        unsafe { self.talc.get_allocated_span(self.heap).size() }
     }
 
     fn available_bytes(&self) -> usize {
-        // self.inner.stats_total_bytes() - self.inner.stats_alloc_actual()
+        self.heap.size() - unsafe { self.talc.get_allocated_span(self.heap).size() }
     }
 }
