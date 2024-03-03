@@ -26,7 +26,12 @@ impl BaseAllocator for YourNewAllocator {
     }
     fn add_memory(&mut self, start: usize, size: usize) -> AllocResult {
         assert!(!self.heap.is_empty());
-        self.heap.extend(0, size); //感觉有问题，先试试
+        self.heap = unsafe {
+            self.talc.extend(
+                self.heap,
+                Span::new(start as *mut u8, (start + size) as *mut u8),
+            )
+        };
         Ok(())
     }
 }
